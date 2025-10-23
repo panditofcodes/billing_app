@@ -1,0 +1,73 @@
+{% extends 'base.html' %} {% block content %}
+<div class="card shadow-sm">
+  <div
+    class="card-header bg-info text-white d-flex justify-content-between align-items-center"
+  >
+    <h4 class="mb-0">Invoice Details</h4>
+    <a href="{% url 'invoice_list' %}" class="btn btn-light btn-sm"
+      >Back to List</a
+    >
+  </div>
+  <div class="card-body">
+    <table class="table table-borderless">
+      <tr>
+        <th style="width: 150px">Invoice No:</th>
+        <td>{{ invoice.invoice_no }}</td>
+      </tr>
+      <tr>
+        <th>Company:</th>
+        <td>{{ invoice.company.name }}</td>
+      </tr>
+      <tr>
+        <th>Customer:</th>
+        <td>{{ invoice.customer.name }}</td>
+      </tr>
+      <tr>
+        <th>Date:</th>
+        <td>{{ invoice.date|date:"d M Y" }}</td>
+      </tr>
+      <tr>
+        <th>Total Amount:</th>
+        <td>₹{{ invoice.total_amount }}</td>
+      </tr>
+    </table>
+
+    <h5 class="mt-4">Items</h5>
+    <table class="table table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Item</th>
+          <th>Rate</th>
+          <th>Quantity</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in invoice.items.all %}
+        <tr>
+          <td>{{ item.item }}</td>
+          <td>₹{{ item.price }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>₹{{ item.total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="mt-3">
+      <a href="{% url 'invoice_create' %}" class="btn btn-success"
+        >Create New Invoice</a
+      >
+      <a href="{% url 'invoice_list' %}" class="btn btn-secondary"
+        >Back to List</a
+      >
+      <a
+        href="{% url 'invoice_print' invoice.id %}"
+        target="_blank"
+        class="btn btn-primary"
+        >Print Invoice</a
+      >
+    </div>
+  </div>
+</div>
+{% endblock %}

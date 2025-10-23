@@ -1,0 +1,15 @@
+{% extends 'base.html' %} {% block content %}
+<div class="card shadow-sm">
+  <div class="card-header bg-success text-white">
+    <h4 class="mb-0">Add Item</h4>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">{{ form.as_p }}</div>
+      <button type="submit" class="btn btn-success">Save</button>
+      <a href="{% url 'item_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
