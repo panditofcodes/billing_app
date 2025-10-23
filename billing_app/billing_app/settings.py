@@ -22,7 +22,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # Allowed hosts (Railway sets its own domain)
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+ALLOWED_HOSTS = ["panditofcodes.pythonanywhere.com", "127.0.0.1"]
 
 
 # -------------------------------------------------------------------
