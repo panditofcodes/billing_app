@@ -24,8 +24,12 @@ class Company(models.Model):
     name = models.CharField(max_length=255)
     gst_number = models.CharField(max_length=15, blank=True, null=True)
     pan_number = models.CharField(max_length=10, blank=True, null=True)
-    address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True)
-    contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True)
+    address = models.ForeignKey(
+        Address, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    contact = models.ForeignKey(
+        Contact, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
         return self.name
@@ -34,8 +38,12 @@ class Company(models.Model):
 class Customer(models.Model):
     name = models.CharField(max_length=255)
     gst_number = models.CharField(max_length=15, blank=True, null=True)
-    address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True)
-    contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True)
+    address = models.ForeignKey(
+        Address, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    contact = models.ForeignKey(
+        Contact, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
         return self.name

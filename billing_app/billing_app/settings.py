@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-key")
 
 # Debug mode (default False for production)
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True
 
 # Allowed hosts (Railway sets its own domain)
 ALLOWED_HOSTS = ["panditofcodes.pythonanywhere.com", "127.0.0.1"]

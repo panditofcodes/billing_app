@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Company, Item, Customer
-from .forms import CompanyForm, ItemForm, CustomerForm
+from .models import Company, Item, Customer, Address, Contact
+from .forms import CompanyForm, ItemForm, CustomerForm, AddressForm, ContactForm
 
 
 # ------------------ Company Views ------------------ #
@@ -15,7 +15,7 @@ def company_list(request):
 
 @login_required
 def company_detail(request, pk):
-    company = Company.objects.get(id=pk)
+    company = get_object_or_404(Company, id=pk)
     return render(request, "masters/company/company_detail.html", {"company": company})
 
 
@@ -28,7 +28,16 @@ def company_create(request):
             return redirect("company_list")
     else:
         form = CompanyForm()
-    return render(request, "masters/company/company_form.html", {"form": form})
+
+    # Pass address and contact lists to template for selection
+    addresses = Address.objects.all()
+    contacts = Contact.objects.all()
+
+    return render(
+        request,
+        "masters/company/company_form.html",
+        {"form": form, "addresses": addresses, "contacts": contacts},
+    )
 
 
 @login_required
@@ -40,6 +49,34 @@ def company_delete(request, pk):
     return render(
         request, "masters/company/company_confirm_delete.html", {"company": company}
     )
+
+
+# ------------------ Address Views ------------------ #
+@login_required
+def address_create(request):
+    if request.method == "POST":
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # redirect back to company creation form
+            return redirect("company_create")
+    else:
+        form = AddressForm()
+    return render(request, "masters/address/address_form.html", {"form": form})
+
+
+# ------------------ Contact Views ------------------ #
+@login_required
+def contact_create(request):
+    if request.method == "POST":
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # redirect back to company creation form
+            return redirect("company_create")
+    else:
+        form = ContactForm()
+    return render(request, "masters/contact/contact_form.html", {"form": form})
 
 
 # ------------------ Item Views ------------------ #
