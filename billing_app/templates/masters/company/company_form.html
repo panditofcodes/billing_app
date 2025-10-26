@@ -1,76 +1,74 @@
-{% extends 'base.html' %}
-{% load static %}
-{% block content %}
+{% extends 'layouts/base_form.html' %}
 
-<div class="card shadow-lg border-0 mt-4">
-  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-    <h4 class="mb-0">Add Company</h4>
-    <a href="{% url 'company_list' %}" class="btn btn-light btn-sm">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </a>
+{% block form_title %}
+{% if form.instance.pk %} Edit Company {% else %} Add Company {% endif %}
+{% endblock %}
+
+{% block form_fields %}
+<div class="row g-3">
+  <!-- Basic Details -->
+  <div class="col-12">
+    <h5 class="border-bottom pb-2 text-primary">Basic Details</h5>
   </div>
 
-  <div class="card-body">
-    <form method="POST" novalidate>
-      {% csrf_token %}
-      <div class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label fw-semibold">Company Name</label>
+    {{ form.name }}
+  </div>
 
-        <!-- Company Name -->
-        <div class="col-md-6">
-          <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">Company Name</label>
-          {{ form.name }}
-        </div>
+  <!-- Linked Details -->
+  <div class="col-12 mt-4">
+    <h5 class="border-bottom pb-2 text-success">Linked Details</h5>
+  </div>
 
-        <!-- GST Number -->
-        <div class="col-md-6">
-          <label for="{{ form.gst_number.id_for_label }}" class="form-label fw-semibold">GST Number</label>
-          {{ form.gst_number }}
-        </div>
+  <div class="col-md-6">
+    <label class="form-label fw-semibold">Address</label>
+    <div class="input-group">
+      <select id="addressSelect" name="address" class="form-select">
+        <option value="">-- Select Address --</option>
+        {% for addr in addresses %}
+        <option value="{{ addr.id }}">{{ addr.line1 }} - {{ addr.city }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addressModal">
+        <i class="bi bi-plus"></i>
+      </button>
+    </div>
+  </div>
 
-        <!-- PAN Number -->
-        <div class="col-md-6">
-          <label for="{{ form.pan_number.id_for_label }}" class="form-label fw-semibold">PAN Number</label>
-          {{ form.pan_number }}
-        </div>
+  <div class="col-md-6">
+    <label class="form-label fw-semibold">Contact</label>
+    <div class="input-group">
+      <select id="contactSelect" name="contact" class="form-select">
+        <option value="">-- Select Contact --</option>
+        {% for c in contacts %}
+        <option value="{{ c.id }}">{{ c.email }} / {{ c.phone }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#contactModal">
+        <i class="bi bi-plus"></i>
+      </button>
+    </div>
+  </div>
 
-        <!-- Address Dropdown -->
-        <div class="col-md-6">
-          <label for="{{ form.address.id_for_label }}" class="form-label fw-semibold">Address</label>
-          <div class="input-group">
-            {{ form.address }}
-            <a href="{% url 'address_create' %}" target="_blank" class="btn btn-outline-primary">
-              + Add Address
-            </a>
-          </div>
-          {% if not form.address.field.queryset.exists %}
-          <small class="text-muted">No addresses found — click “Add Address” to create one.</small>
-          {% endif %}
-        </div>
+  <!-- Other Details -->
+  <div class="col-12 mt-4">
+    <h5 class="border-bottom pb-2 text-secondary">Other Details</h5>
+  </div>
 
-        <!-- Contact Dropdown -->
-        <div class="col-md-6">
-          <label for="{{ form.contact.id_for_label }}" class="form-label fw-semibold">Contact</label>
-          <div class="input-group">
-            {{ form.contact }}
-            <a href="{% url 'contact_create' %}" target="_blank" class="btn btn-outline-primary">
-              + Add Contact
-            </a>
-          </div>
-          {% if not form.contact.field.queryset.exists %}
-          <small class="text-muted">No contacts found — click “Add Contact” to create one.</small>
-          {% endif %}
-        </div>
+  <div class="col-md-6">
+    <label class="form-label fw-semibold">GST Number</label>
+    {{ form.gst_number }}
+  </div>
 
-      </div>
-
-      <div class="mt-4 d-flex justify-content-end gap-2">
-        <a href="{% url 'company_list' %}" class="btn btn-secondary">Cancel</a>
-        <button type="submit" class="btn btn-success">
-          <i class="bi bi-save"></i> Save
-        </button>
-      </div>
-    </form>
+  <div class="col-md-6">
+    <label class="form-label fw-semibold">PAN Number</label>
+    {{ form.pan_number }}
   </div>
 </div>
+{% endblock %}
 
+{% block form_modals %}
+{% include 'masters/company/address_modal.html' %}
+{% include 'masters/company/contact_modal.html' %}
 {% endblock %}
