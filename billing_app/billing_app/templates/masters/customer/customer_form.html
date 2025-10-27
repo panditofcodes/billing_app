@@ -1,0 +1,75 @@
+{% extends 'base_form.html' %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block title %}{{ form.instance.id|yesno:"Edit Customer,Add Customer" }}{% endblock %}
+{% block form_title %}{{ form.instance.id|yesno:"Edit Customer,Add Customer" }}{% endblock %}
+{% block form_icon %}bi bi-person-badge{% endblock %}
+
+{% block form_content %}
+<form id="mainForm" method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+
+  <div class="row g-3">
+    <!-- Customer Name -->
+    <div class="col-md-6">
+      <label class="form-label">Customer Name</label>
+      {{ form.name|add_class:"form-control" }}
+    </div>
+
+    <!-- GST Number -->
+    <div class="col-md-6">
+      <label class="form-label">GST Number</label>
+      {{ form.gst_number|add_class:"form-control" }}
+    </div>
+
+    <!-- Address -->
+    <div class="col-md-6">
+      <label class="form-label">Address</label>
+      <div class="input-group">
+        {{ form.address|add_class:"form-select" }}
+        <button
+          type="button"
+          class="btn btn-outline-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#addressModal"
+          title="Add New Address"
+        >
+          <i class="bi bi-plus-circle"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="col-md-6">
+      <label class="form-label">Contact</label>
+      <div class="input-group">
+        {{ form.contact|add_class:"form-select" }}
+        <button
+          type="button"
+          class="btn btn-outline-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#contactModal"
+          title="Add New Contact"
+        >
+          <i class="bi bi-plus-circle"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Button -->
+  <!-- <div class="text-end mt-4">
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-save"></i> Save
+    </button>
+  </div> -->
+</form>
+
+<!-- Include Address & Contact Modals -->
+{% include 'includes/address_modal.html' %}
+{% include 'includes/contact_modal.html' %}
+
+<!-- JS for AJAX handling -->
+<script src="{% static 'js/address_contact.js' %}"></script>
+{% endblock %}

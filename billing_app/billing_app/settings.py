@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "masters",
     "transactions",
     "printformats",
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [
@@ -59,7 +60,7 @@ ROOT_URLCONF = "billing_app.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [BASE_DIR / "billing_app" /"templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -134,8 +135,8 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # 🧭 LOGIN/LOGOUT REDIRECTS
 # -------------------------------------------------------------------
 
+LOGIN_REDIRECT_URL = "dashboard"
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "login"
 
 

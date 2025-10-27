@@ -67,16 +67,20 @@ def company_create(request):
     addresses = Address.objects.all()
     contacts = Contact.objects.all()
 
-    return render(
-        request,
-        "masters/company/company_form.html",
-        {"form": form, "addresses": addresses, "contacts": contacts},
-    )
+    context = {
+        "form": form,
+        "addresses": addresses,
+        "contacts": contacts,
+        "title": "Add Company",               # ✅ For page title
+        "list_url": reverse("company_list"),  # ✅ For Back button
+    }
 
+    return render(request, "masters/company/company_form.html", context)
 
 @login_required
 def company_edit(request, pk):
     company = get_object_or_404(Company, pk=pk)
+
     if request.method == "POST":
         form = CompanyForm(request.POST, instance=company)
         if form.is_valid():
@@ -85,14 +89,17 @@ def company_edit(request, pk):
     else:
         form = CompanyForm(instance=company)
 
-    addresses = Address.objects.all()
-    contacts = Contact.objects.all()
+    context = {
+        "form": form,
+        "object": company,
+        "title": "Edit Company",
+        "form_title": "Edit Company",
+        "list_url": reverse("company_list"),
+        "add_url": reverse("company_create"),
+    }
 
-    return render(
-        request,
-        "masters/company/company_form.html",
-        {"form": form, "addresses": addresses, "contacts": contacts},
-    )
+    return render(request, "masters/company/company_form.html", context)
+
 
 
 @login_required
@@ -174,7 +181,29 @@ def contact_create_ajax(request):
 @login_required
 def item_list(request):
     items = Item.objects.all()
-    return render(request, "masters/item/item_list.html", {"items": items})
+
+    for i in items:
+        i.get_edit_url = reverse("item_edit", args=[i.id])
+        i.get_delete_url = reverse("item_delete", args=[i.id])
+
+    columns = [
+        {"label": "Item Name", "attr": "name", "clickable": True, "width": "25%"},
+        {"label": "Description", "attr": "description", "clickable": False, "width": "35%"},
+        {"label": "HSN Code", "attr": "hsn_code", "clickable": False, "width": "15%"},
+        {"label": "Price", "attr": "price", "clickable": False, "width": "15%"},
+        {"label": "Actions", "attr": "custom_actions", "clickable": False, "width": "10%"},
+    ]
+
+    context = {
+        "object_list": items,
+        "columns": columns,
+        "add_url": reverse("item_create"),
+        "list_title": "Item List",
+        "object_name": "Item",
+        "list_icon": "bi bi-box-seam",
+    }
+
+    return render(request, "masters/item/item_list.html", context)
 
 
 @login_required
@@ -193,6 +222,7 @@ def item_create(request):
 @login_required
 def item_edit(request, pk):
     item = get_object_or_404(Item, pk=pk)
+
     if request.method == "POST":
         form = ItemForm(request.POST, instance=item)
         if form.is_valid():
@@ -200,25 +230,37 @@ def item_edit(request, pk):
             return redirect("item_list")
     else:
         form = ItemForm(instance=item)
-    return render(request, "masters/item/item_form.html", {"form": form, "item": item})
+
+    context = {
+        "form": form,
+        "object": item,
+        "title": "Edit Item",
+        "form_title": "Edit Item",
+        "list_url": reverse("item_list"),
+        "add_url": reverse("item_create"),
+    }
+
+    return render(request, "masters/item/item_form.html", context)
+
 
 
 @login_required
 def item_detail(request, pk):
     item = get_object_or_404(Item, pk=pk)
-    return render(
-        request,
-        "masters/item/item_detail.html",
-        {
-            "item": item,
-            "object": item,
-            "title": "Item Details",
-            "list_url": "item_list",
-            "add_url": "item_create",
-            "edit_url": "item_edit",
-            "delete_url": "item_delete",
-        },
-    )
+
+    context = {
+        "item": item,
+        "object": item,
+        "title": "Item Details",
+        "object_name": "Item",
+        "edit_url": reverse("item_edit", args=[item.id]),
+        "delete_url": reverse("item_delete", args=[item.id]),
+        "add_url": reverse("item_create"),
+        "back_url": reverse("item_list"),
+    }
+
+    return render(request, "masters/item/item_detail.html", context)
+
 
 
 @login_required
@@ -234,9 +276,31 @@ def item_delete(request, pk):
 @login_required
 def customer_list(request):
     customers = Customer.objects.all()
-    return render(
-        request, "masters/customer/customer_list.html", {"customers": customers}
-    )
+
+    for c in customers:
+        c.address_display = f"{c.address.line1}, {c.address.city}" if c.address else ""
+        c.contact_display = f"{c.contact.email} / {c.contact.phone}" if c.contact else ""
+        c.get_edit_url = reverse("customer_edit", args=[c.id])
+        c.get_delete_url = reverse("customer_delete", args=[c.id])
+
+    columns = [
+        {"label": "Name", "attr": "name", "clickable": True, "width": "22%"},
+        {"label": "Address", "attr": "address_display", "clickable": False, "width": "25%"},
+        {"label": "Contact", "attr": "contact_display", "clickable": False, "width": "25%"},
+        {"label": "GSTIN", "attr": "gst_number", "clickable": False, "width": "18%"},
+        {"label": "Actions", "attr": "custom_actions", "clickable": False, "width": "10%"},
+    ]
+
+    context = {
+        "object_list": customers,
+        "columns": columns,
+        "add_url": reverse("customer_create"),
+        "list_title": "Customer List",
+        "object_name": "Customer",
+        "list_icon": "bi bi-people",
+    }
+
+    return render(request, "masters/customer/customer_list.html", context)
 
 
 @login_required
@@ -253,10 +317,21 @@ def customer_create(request):
 
 @login_required
 def customer_detail(request, pk):
-    customer = get_object_or_404(Customer, id=pk)
-    return render(
-        request, "masters/customer/customer_detail.html", {"customer": customer}
-    )
+    customer = get_object_or_404(Customer, pk=pk)
+
+    context = {
+        "customer": customer,
+        "object": customer,
+        "title": "Customer Details",
+        "object_name": "Customer",
+        "edit_url": reverse("customer_edit", args=[customer.id]),
+        "delete_url": reverse("customer_delete", args=[customer.id]),
+        "add_url": reverse("customer_create"),
+        "back_url": reverse("customer_list"),
+    }
+
+    return render(request, "masters/customer/customer_detail.html", context)
+
 
 
 @login_required
@@ -273,6 +348,7 @@ def customer_delete(request, pk):
 @login_required
 def customer_edit(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
+
     if request.method == "POST":
         form = CustomerForm(request.POST, instance=customer)
         if form.is_valid():
@@ -281,17 +357,13 @@ def customer_edit(request, pk):
     else:
         form = CustomerForm(instance=customer)
 
-    # Pass addresses and contacts for dropdowns
-    addresses = Address.objects.all()
-    contacts = Contact.objects.all()
+    context = {
+        "form": form,
+        "object": customer,
+        "title": "Edit Customer",
+        "form_title": "Edit Customer",
+        "list_url": reverse("customer_list"),
+        "add_url": reverse("customer_create"),
+    }
 
-    return render(
-        request,
-        "masters/customer/customer_form.html",
-        {
-            "form": form,
-            "addresses": addresses,
-            "contacts": contacts,
-            "customer": customer,
-        },
-    )
+    return render(request, "masters/customer/customer_form.html", context)

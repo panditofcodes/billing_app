@@ -1,18 +1,28 @@
 from django.db import models
+from django.utils import timezone
 from masters.models import Company, Customer, Item
 
 
 class Invoice(models.Model):
-    invoice_no = models.CharField(max_length=50, unique=True)
+    STATUS_CHOICES = [
+        ("Draft", "Draft"),
+        ("Unpaid", "Unpaid"),
+        ("Paid", "Paid"),
+        ("Cancelled", "Cancelled"),
+    ]
+
+    invoice_number = models.CharField(max_length=50, unique=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    date = models.DateField(auto_now_add=True)
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
-    gst_total = models.DecimalField(max_digits=12, decimal_places=2)
-    grand_total = models.DecimalField(max_digits=12, decimal_places=2)
+    date = models.DateField(default=timezone.now)
+    due_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Draft")
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    gst_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    grand_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
-        return self.invoice_no
+        return self.invoice_number
 
 
 class InvoiceItem(models.Model):
@@ -24,4 +34,4 @@ class InvoiceItem(models.Model):
     total = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
-        return f"{self.item.name} ({self.invoice.invoice_no})"
+        return f"{self.item.name} ({self.invoice.invoice_number})"

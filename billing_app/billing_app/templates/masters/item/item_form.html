@@ -1,0 +1,46 @@
+{% extends 'base_form.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+  {{ item.id|yesno:"Edit Item,Add Item" }}
+{% endblock %}
+
+{% block form_title %}
+  {{ item.id|yesno:"Edit Item,Add Item" }}
+{% endblock %}
+{% block form_icon %}bi bi-box{% endblock %}
+
+{% block form_content %}
+<form method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  <div class="row g-3">
+
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Item Name</label>
+      {{ form.name }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">HSN Code</label>
+      {{ form.hsn_code }}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label fw-semibold">Price</label>
+      {{ form.price }}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label fw-semibold">GST Rate (%)</label>
+      {{ form.gst_rate }}
+    </div>
+
+    <div class="col-md-12">
+      <label class="form-label fw-semibold">Description</label>
+      {{ form.description }}
+    </div>
+
+  </div>
+</form>
+{% endblock %}

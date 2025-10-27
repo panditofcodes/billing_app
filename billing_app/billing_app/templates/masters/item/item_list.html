@@ -1,0 +1,57 @@
+{% extends 'base_list.html' %}
+{% load custom_tags %}
+{% load static %}
+
+{% block title %}Item List{% endblock %}
+{% block list_title %}Item List{% endblock %}
+{% block list_icon %}bi bi-box-seam{% endblock %}
+
+{% block list_content %}
+<table class="table align-middle table-hover">
+  <thead class="table-light">
+    <tr>
+      {% for col in columns %}
+        <th style="width: {{ col.width }}">{{ col.label }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for obj in object_list %}
+      <tr>
+        {% for col in columns %}
+          <td>
+            {% if col.attr == "custom_actions" %}
+              <div class="d-flex gap-2">
+                <a href="{{ obj.get_edit_url }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteModal{{ obj.id }}"
+                  title="Delete"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+                {% include 'includes/modal_delete.html' with obj=obj delete_url='item_delete' %}
+              </div>
+            {% elif col.clickable %}
+              <a href="{% url 'item_detail' obj.id %}" class="text-decoration-none text-dark fw-semibold">
+                {{ obj|get_attr:col.attr }}
+              </a>
+            {% else %}
+              {{ obj|get_attr:col.attr }}
+            {% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="{{ columns|length }}" class="text-center text-muted py-4">
+          <i class="bi bi-inboxes"></i> No items found.
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

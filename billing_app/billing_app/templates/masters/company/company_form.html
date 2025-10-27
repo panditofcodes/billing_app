@@ -1,0 +1,118 @@
+{% extends 'base_form.html' %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block title %}
+  {{ form.instance.id|yesno:"Edit Company,Add Company" }}
+{% endblock %}
+
+{% block form_title %}
+  {{ form.instance.id|yesno:"Edit Company,Add Company" }}
+{% endblock %}
+
+{% block form_icon %}bi bi-building{% endblock %}
+
+{% block form_content %}
+<form id="mainForm" method="post" class="needs-validation" novalidate>
+  {% csrf_token %}
+  
+  <div class="row g-3">
+    <!-- Company Info -->
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Company Name</label>
+      {{ form.name|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">GST Number</label>
+      {{ form.gst_number|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">PAN Number</label>
+      {{ form.pan_number|add_class:"form-control" }}
+    </div>
+
+    <!-- Linked Address -->
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Address</label>
+      <div class="input-group">
+        {{ form.address|add_class:"form-select" }}
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addressModal">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      </div>
+      <div class="form-text">Select or create a new address.</div>
+    </div>
+
+    <!-- Linked Contact -->
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Contact</label>
+      <div class="input-group">
+        {{ form.contact|add_class:"form-select" }}
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#contactModal">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      </div>
+      <div class="form-text">Select or create a new contact.</div>
+    </div>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_modals %}
+  {% include 'includes/address_modal.html' %}
+  {% include 'includes/contact_modal.html' %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Save Address
+  document.querySelector("#addressForm")?.addEventListener("submit", function (e) {
+    e.preventDefault();
+    fetch("{% url 'address_create_ajax' %}", {
+      method: "POST",
+      headers: { "X-CSRFToken": this.querySelector('[name=csrfmiddlewaretoken]').value },
+      body: new FormData(this)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.id) {
+        const select = document.querySelector("select[name='address']");
+        const option = new Option(`${data.line1}, ${data.city}`, data.id, true, true);
+        select.append(option);
+        bootstrap.Modal.getInstance(document.getElementById("addressModal")).hide();
+        this.reset();
+      } else {
+        alert("Error saving address!");
+      }
+    });
+  });
+
+  // Save Contact
+  document.querySelector("#contactForm")?.addEventListener("submit", function (e) {
+    e.preventDefault();
+    fetch("{% url 'contact_create_ajax' %}", {
+      method: "POST",
+      headers: { "X-CSRFToken": this.querySelector('[name=csrfmiddlewaretoken]').value },
+      body: new FormData(this)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.id) {
+        const select = document.querySelector("select[name='contact']");
+        const label = data.phone || data.email || "New Contact";
+        const option = new Option(label, data.id, true, true);
+        select.append(option);
+        bootstrap.Modal.getInstance(document.getElementById("contactModal")).hide();
+        this.reset();
+      } else {
+        alert("Error saving contact!");
+      }
+    });
+  });
+});
+</script>
+{% endblock %}
