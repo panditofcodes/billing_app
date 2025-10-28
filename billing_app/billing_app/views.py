@@ -1,7 +1,9 @@
 from django.shortcuts import render
 from masters.models import Company, Customer, Item
 from transactions.models import Invoice
+from django.contrib.auth.decorators import login_required
 
+@login_required(login_url='login')
 def dashboard(request):
     # Choose the correct field for ordering
     # Check which field your Invoice model actually has
