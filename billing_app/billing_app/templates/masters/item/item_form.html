@@ -1,44 +1,64 @@
 {% extends 'base_form.html' %}
-{% load static %}
 {% load widget_tweaks %}
+{% load static %}
 
-{% block title %}
-  {{ item.id|yesno:"Edit Item,Add Item" }}
-{% endblock %}
-
-{% block form_title %}
-  {{ item.id|yesno:"Edit Item,Add Item" }}
-{% endblock %}
+{% block title %}{{ item.id|yesno:"Edit Item,Add Item" }}{% endblock %}
+{% block form_title %}{{ item.id|yesno:"Edit Item,Add Item" }}{% endblock %}
 {% block form_icon %}bi bi-box{% endblock %}
 
 {% block form_content %}
-<form method="post" class="needs-validation" novalidate>
+<form id="mainForm" method="post" class="needs-validation" novalidate>
   {% csrf_token %}
+
+  {# non-field errors #}
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger mb-3">
+      {% for err in form.non_field_errors %}
+        <div>{{ err }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   <div class="row g-3">
 
     <div class="col-md-6">
       <label class="form-label fw-semibold">Item Name</label>
-      {{ form.name }}
+      {{ form.name|add_class:"form-control" }}
+      {% for e in form.name.errors %}
+        <div class="invalid-feedback d-block">{{ e }}</div>
+      {% endfor %}
     </div>
 
     <div class="col-md-6">
       <label class="form-label fw-semibold">HSN Code</label>
-      {{ form.hsn_code }}
+      {{ form.hsn_code|add_class:"form-control" }}
+      {% for e in form.hsn_code.errors %}
+        <div class="invalid-feedback d-block">{{ e }}</div>
+      {% endfor %}
     </div>
 
     <div class="col-md-4">
       <label class="form-label fw-semibold">Price</label>
-      {{ form.price }}
+      {{ form.price|add_class:"form-control" }}
+      {% for e in form.price.errors %}
+        <div class="invalid-feedback d-block">{{ e }}</div>
+      {% endfor %}
     </div>
 
     <div class="col-md-4">
       <label class="form-label fw-semibold">GST Rate (%)</label>
-      {{ form.gst_rate }}
+      {{ form.gst_rate|add_class:"form-control" }}
+      {% for e in form.gst_rate.errors %}
+        <div class="invalid-feedback d-block">{{ e }}</div>
+      {% endfor %}
     </div>
 
     <div class="col-md-12">
       <label class="form-label fw-semibold">Description</label>
-      {{ form.description }}
+      {{ form.description|add_class:"form-control" }}
+      {% for e in form.description.errors %}
+        <div class="invalid-feedback d-block">{{ e }}</div>
+      {% endfor %}
     </div>
 
   </div>

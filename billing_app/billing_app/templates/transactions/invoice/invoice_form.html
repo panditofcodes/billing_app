@@ -7,14 +7,21 @@
 {% block form_icon %}bi bi-receipt{% endblock %}
 
 {% block form_content %}
-<form method="post" class="needs-validation" novalidate>
+<form id="mainForm" method="post" class="needs-validation" novalidate>
   {% csrf_token %}
 
   <div class="row g-3">
     <!-- Invoice Info -->
     <div class="col-md-6">
       <label class="form-label fw-semibold">Invoice No</label>
-      <input type="text" name="invoice_no" id="invoice_no" class="form-control" readonly>
+      <input
+        type="text"
+        name="invoice_no"
+        id="invoice_no"
+        class="form-control"
+        readonly
+        value="{% if invoice %}{{ invoice.invoice_number }}{% endif %}"
+      >
     </div>
 
     <div class="col-md-6">
@@ -22,7 +29,9 @@
       <select name="company" class="form-select" required>
         <option value="">Select Company</option>
         {% for company in companies %}
-          <option value="{{ company.id }}">{{ company.name }}</option>
+          <option value="{{ company.id }}"
+            {% if invoice and invoice.company_id == company.id %}selected{% endif %}
+          >{{ company.name }}</option>
         {% endfor %}
       </select>
     </div>
@@ -32,7 +41,9 @@
       <select name="customer" class="form-select" required>
         <option value="">Select Customer</option>
         {% for customer in customers %}
-          <option value="{{ customer.id }}">{{ customer.name }}</option>
+          <option value="{{ customer.id }}"
+            {% if invoice and invoice.customer_id == customer.id %}selected{% endif %}
+          >{{ customer.name }}</option>
         {% endfor %}
       </select>
     </div>
@@ -42,37 +53,9 @@
 
   <!-- Items Table -->
   <h5 class="fw-semibold mb-3">Items</h5>
-  <div id="items-container">
-    <div class="row g-3 align-items-end item-row">
-      <div class="col-md-5">
-        <label class="form-label">Item</label>
-        <select name="item" class="form-select item-select" required>
-          <option value="">Select Item</option>
-          {% for item in items %}
-            <option value="{{ item.id }}" data-price="{{ item.price }}" data-gst="{{ item.gst_rate }}">
-              {{ item.name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
 
-      <div class="col-md-3">
-        <label class="form-label">Quantity</label>
-        <input type="number" name="quantity" class="form-control qty-input" value="1" min="1" required>
-      </div>
-
-      <div class="col-md-3">
-        <label class="form-label">Price</label>
-        <input type="text" class="form-control price-display" readonly>
-      </div>
-
-      <div class="col-md-1 d-flex justify-content-center">
-        <button type="button" class="btn btn-outline-danger remove-item mt-4">
-          <i class="bi bi-trash"></i>
-        </button>
-      </div>
-    </div>
-  </div>
+  {# container carries JSON for edit mode; JS will render rows inside it #}
+  <div id="items-container" data-lines='{{ line_items_json|default:"[]" }}'></div>
 
   <div class="mt-3">
     <button type="button" id="add-item" class="btn btn-outline-primary btn-sm">
@@ -115,70 +98,179 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // === Auto-generate invoice number ===
-  function generateInvoiceNumber() {
+  // --- invoice number: only generate if blank (create mode) ---
+  const invoiceInput = document.getElementById("invoice_no");
+  if (!invoiceInput.value) {
     const today = new Date();
-    const datePart = today.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
-    const randomPart = Math.floor(100 + Math.random() * 900); // random 3-digit number
-    return `INV-${datePart}-${randomPart}`;
+    const datePart = today.toISOString().slice(0,10).replace(/-/g,'');
+    invoiceInput.value = `INV-${datePart}-${Math.floor(100 + Math.random()*900)}`;
   }
-  document.getElementById("invoice_no").value = generateInvoiceNumber();
 
-  // === Handle Items ===
+  // --- Prepare items metadata from template context ---
+  const itemsList = [
+    {% for it in items %}
+      { id: "{{ it.id }}", name: "{{ it.name|escapejs }}", price: "{{ it.price }}", gst: "{{ it.gst_rate|default:0 }}" }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
   const container = document.getElementById("items-container");
   const addItemBtn = document.getElementById("add-item");
+  const initialLines = JSON.parse(container.dataset.lines || "[]");
 
-  // Add new item row
-  addItemBtn.addEventListener("click", () => {
-    const newRow = container.querySelector(".item-row").cloneNode(true);
-    newRow.querySelectorAll("input, select").forEach(el => {
-      if (el.name === "quantity") el.value = 1;
-      if (el.classList.contains("price-display")) el.value = "";
-      if (el.tagName === "SELECT") el.selectedIndex = 0;
+  // build <select name="item"> element
+  function buildSelectElement(selectedId) {
+    const sel = document.createElement("select");
+    sel.name = "item";
+    sel.className = "form-select item-select";
+    sel.required = true;
+
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "Select Item";
+    sel.appendChild(opt0);
+
+    itemsList.forEach(i => {
+      const o = document.createElement("option");
+      o.value = i.id;
+      o.textContent = i.name;
+      o.dataset.price = i.price;
+      o.dataset.gst = i.gst;
+      sel.appendChild(o);
     });
-    container.appendChild(newRow);
-  });
 
-  // Remove item row
-  container.addEventListener("click", (e) => {
-    if (e.target.closest(".remove-item")) {
-      const rows = container.querySelectorAll(".item-row");
-      if (rows.length > 1) e.target.closest(".item-row").remove();
-      calculateTotals();
-    }
-  });
+    if (selectedId) sel.value = selectedId;
+    return sel;
+  }
 
-  // Recalculate on change
-  container.addEventListener("change", (e) => {
-    if (e.target.matches(".item-select, .qty-input")) calculateTotals();
-  });
+  // create a single item row (data optional). Adds hidden line_id for edit rows.
+  function createRow(data) {
+    const row = document.createElement("div");
+    row.className = "row g-3 align-items-end item-row mb-2";
 
-  // === Calculate Totals ===
+    // hidden line id (for edits)
+    const lineIdInput = document.createElement("input");
+    lineIdInput.type = "hidden";
+    lineIdInput.name = "line_id";
+    lineIdInput.value = data && data.line_id ? data.line_id : "";
+    row.appendChild(lineIdInput);
+
+    // item select col
+    const c1 = document.createElement("div"); c1.className = "col-md-5";
+    const lbl1 = document.createElement("label"); lbl1.className = "form-label"; lbl1.textContent = "Item";
+    c1.appendChild(lbl1);
+    const sel = buildSelectElement(data ? data.item_id : null);
+    c1.appendChild(sel);
+
+    // quantity col
+    const c2 = document.createElement("div"); c2.className = "col-md-3";
+    const lbl2 = document.createElement("label"); lbl2.className = "form-label"; lbl2.textContent = "Quantity";
+    c2.appendChild(lbl2);
+    const qty = document.createElement("input");
+    qty.type = "number";
+    qty.name = "quantity";
+    qty.className = "form-control qty-input";
+    qty.min = 1;
+    qty.required = true;
+    qty.value = data ? data.qty : 1;
+    c2.appendChild(qty);
+
+    // price col
+    const c3 = document.createElement("div"); c3.className = "col-md-3";
+    const lbl3 = document.createElement("label"); lbl3.className = "form-label"; lbl3.textContent = "Price";
+    c3.appendChild(lbl3);
+    const price = document.createElement("input");
+    price.type = "text";
+    price.name = "price";
+    price.className = "form-control price-display";
+    price.readOnly = true;
+    price.value = data && data.price ? parseFloat(data.price).toFixed(2) : "";
+    c3.appendChild(price);
+
+    // remove button
+    const c4 = document.createElement("div"); c4.className = "col-md-1 d-flex justify-content-center";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-outline-danger remove-item";
+    btn.innerHTML = '<i class="bi bi-trash"></i>';
+    c4.appendChild(btn);
+
+    row.appendChild(c1);
+    row.appendChild(c2);
+    row.appendChild(c3);
+    row.appendChild(c4);
+
+    container.appendChild(row);
+
+    // ensure price display is correct
+    recalcRow(row);
+    return row;
+  }
+
+  function recalcRow(row) {
+    const sel = row.querySelector(".item-select");
+    const qty = row.querySelector(".qty-input");
+    const priceInput = row.querySelector(".price-display");
+    const pricePer = parseFloat(sel.selectedOptions[0]?.dataset.price || 0);
+    const qtyVal = parseFloat(qty.value || 0);
+    priceInput.value = (pricePer * qtyVal) ? (pricePer * qtyVal).toFixed(2) : "";
+    calculateTotals();
+  }
+
   function calculateTotals() {
     let subtotal = 0, gstTotal = 0;
-
     container.querySelectorAll(".item-row").forEach(row => {
-      const itemSelect = row.querySelector(".item-select");
-      const qtyInput = row.querySelector(".qty-input");
-      const priceDisplay = row.querySelector(".price-display");
-
-      const price = parseFloat(itemSelect.selectedOptions[0]?.dataset.price || 0);
-      const gst = parseFloat(itemSelect.selectedOptions[0]?.dataset.gst || 0);
-      const qty = parseFloat(qtyInput.value) || 0;
-
-      const lineTotal = price * qty;
-      const gstAmount = (lineTotal * gst) / 100;
-
+      const sel = row.querySelector(".item-select");
+      const qty = parseFloat(row.querySelector(".qty-input").value || 0);
+      const pricePer = parseFloat(sel.selectedOptions[0]?.dataset.price || 0);
+      const gst = parseFloat(sel.selectedOptions[0]?.dataset.gst || 0);
+      const lineTotal = pricePer * qty;
+      const gstAmt = (lineTotal * gst) / 100;
       subtotal += lineTotal;
-      gstTotal += gstAmount;
-
-      priceDisplay.value = lineTotal.toFixed(2);
+      gstTotal += gstAmt;
+      const priceDisplay = row.querySelector(".price-display");
+      if (!priceDisplay.value) priceDisplay.value = lineTotal ? lineTotal.toFixed(2) : "";
     });
 
     document.getElementById("subtotal").textContent = `₹${subtotal.toFixed(2)}`;
     document.getElementById("gst_total").textContent = `₹${gstTotal.toFixed(2)}`;
     document.getElementById("grand_total").textContent = `₹${(subtotal + gstTotal).toFixed(2)}`;
   }
+
+  // render initial rows from server data (edit) or one blank row
+  container.innerHTML = "";
+  if (initialLines.length) {
+    initialLines.forEach(l => createRow(l));
+  } else {
+    createRow(null);
+  }
+
+  // events
+  addItemBtn.addEventListener("click", () => createRow(null));
+
+  container.addEventListener("change", (e) => {
+    const row = e.target.closest(".item-row");
+    if (!row) return;
+    if (e.target.matches(".item-select") || e.target.matches(".qty-input")) recalcRow(row);
+  });
+
+  container.addEventListener("click", (e) => {
+    if (e.target.closest(".remove-item")) {
+      const rows = container.querySelectorAll(".item-row");
+      if (rows.length > 1) e.target.closest(".item-row").remove();
+      else {
+        const r = e.target.closest(".item-row");
+        r.querySelector(".item-select").value = "";
+        r.querySelector(".qty-input").value = 1;
+        r.querySelector(".price-display").value = "";
+        // clear line_id for the single remaining row
+        const hid = r.querySelector('input[name="line_id"]');
+        if (hid) hid.value = "";
+      }
+      calculateTotals();
+    }
+  });
+
+  calculateTotals();
 });
 </script>
 {% endblock %}

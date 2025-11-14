@@ -36,7 +36,7 @@
       </div>
       <div class="text-end">
         <div class="invoice-title">INVOICE</div>
-        <p class="mb-0"><strong>No:</strong> {{ invoice.invoice_no }}</p>
+        <p class="mb-0"><strong>No:</strong> {{ invoice.invoice_number }}</p>
         <p class="mb-0"><strong>Date:</strong> {{ invoice.date|date:"d-m-Y" }}</p>
       </div>
     </div>
@@ -67,7 +67,7 @@
           <td>{{ item.item.name }}</td>
           <td class="text-end">{{ item.quantity }}</td>
           <td class="text-end">{{ item.price }}</td>
-          <td class="text-end">{{ (item.quantity * item.price) }}</td>
+          <td class="text-end">100</td>
         </tr>
         {% endfor %}
       </tbody>
